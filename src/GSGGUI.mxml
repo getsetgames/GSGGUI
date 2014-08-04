@@ -1,0 +1,194 @@
+<?xml version="1.0" encoding="utf-8"?>
+<csxs:CSExtension xmlns:fx="http://ns.adobe.com/mxml/2009"
+				  xmlns:s="library://ns.adobe.com/flex/spark"
+				  xmlns:csxs="com.adobe.csxs.core.*"
+				  xmlns:mx="library://ns.adobe.com/flex/mx"
+				  width="350" height="450" applicationComplete="appComplete()"
+				  backgroundColor="#565656" preloaderChromeColor="#000000">
+	<fx:Style source="GSGGUI.css"/>
+	<fx:Script>
+		<![CDATA[
+			import com.adobe.csawlib.photoshop.Photoshop;
+			import com.adobe.csxs.core.CSInterface;
+			import com.adobe.csxs.core.CSXSInterface;
+			import com.adobe.csxs.types.SyncRequestResult;
+			
+			import mx.collections.ArrayCollection;
+			import mx.events.FlexEvent;
+			
+			[Bindable]
+			private var hostName:String = HostObject.mainExtension;
+			
+			[Bindable]
+			private var aboutString:String = null;
+			
+			[Bindable]
+			public var positionTypes:ArrayCollection = new ArrayCollection([
+																			{label:"Absolute",		data:GSGGUIMetadata.kPositionTypeAbsolute,		index:0},
+																			{label:"SnapToPoint",	data:GSGGUIMetadata.kPositionTypeSnapToPoint,	index:1},
+																			{label:"Relative",		data:GSGGUIMetadata.kPositionTypeRelative,		index:2}
+																			]);
+			
+			[Bindable]
+			public var snapToHorizontalTypes:ArrayCollection = new ArrayCollection([
+																					{label:"Left",			data:GSGGUIMetadata.kPositionTypeSnapToLeft,		index:0},
+																					{label:"Right",			data:GSGGUIMetadata.kPositionTypeSnapToRight,		index:1},
+																					{label:"Left/Right",	data:GSGGUIMetadata.kPositionTypeSnapToLeftRight,	index:2},
+																				]);
+			
+			[Bindable]
+			public var snapToVerticalTypes:ArrayCollection = new ArrayCollection([
+																					{label:"Top",			data:GSGGUIMetadata.kPositionTypeSnapToTop,			index:0},
+																					{label:"Bottom",		data:GSGGUIMetadata.kPositionTypeSnapToBottom,		index:1},
+																					{label:"Top/Bottom",	data:GSGGUIMetadata.kPositionTypeSnapToTopBottom,	index:2},
+																				]);
+			
+			public static var instance:GSGGUI;
+			
+			public static function getGSGGUIVersion():String
+			{
+				var reqResult:SyncRequestResult = CSXSInterface.instance.evalScript("getGSGGUIVersion");
+				if (reqResult.status == SyncRequestResult.COMPLETE)
+				{
+					return reqResult.data.versionString;
+				}
+				return "UNAVAILABLE";
+			}
+			
+			public function appComplete():void
+			{
+				instance = this;
+				
+				aboutString = "GSGGUI " + getGSGGUIVersion() + "\n" +
+					"Created by Dario Segura at Get Set Games Inc.\n" +
+					"2013 is the year of the beast!";
+				
+			 	CSInterface.instance.autoThemeColorChange = true;
+				CSXSInterface.instance.evalScript("PhotoshopRegisterEvent", PSTools.charToInteger("Opn ").toString());
+				CSXSInterface.instance.evalScript("PhotoshopRegisterEvent", PSTools.charToInteger("setd").toString());
+				CSXSInterface.instance.evalScript("PhotoshopRegisterEvent", PSTools.charToInteger("Mk  ").toString());
+				CSXSInterface.instance.evalScript("PhotoshopRegisterEvent", PSTools.charToInteger("Dlt ").toString());
+				CSXSInterface.instance.evalScript("PhotoshopRegisterEvent", PSTools.charToInteger("slct").toString());
+				CSXSInterface.instance.evalScript("PhotoshopRegisterEvent", PSTools.charToInteger("move").toString());
+				CSXSInterface.instance.evalScript("PhotoshopRegisterEvent", PSTools.charToInteger("save").toString());
+				CSXSInterface.instance.evalScript("PhotoshopRegisterEvent", PSTools.charToInteger("CnvS").toString());
+				ExternalInterface.addCallback("PhotoshopCallback" + CSXSInterface.instance.getExtensionId(), GSGGUIPhotoshop.photoshopCallback);
+				
+				if (Photoshop.app.activeDocument != null)
+				{
+					GSGGUIPhotoshop.photoshopCallback(PSTools.charToInteger("Opn "), 0);
+				}
+			}
+			
+			public function findEnterKey(evt:KeyboardEvent):void
+			{
+				if (evt.keyCode == Keyboard.ENTER)
+				{
+					if (evt.currentTarget == this.relativePositionHorizontal || evt.currentTarget == this.relativePositionVertical)
+					{
+						// forward the event //
+						GSGGUIPhotoshop.manualRelativePosition(evt);
+					}
+					else if (evt.currentTarget == this.nameField)
+					{
+						GSGGUIPhotoshop.changedLayerBasics(evt);
+					}
+						
+				}
+			}
+			
+			public function exportLayout(evt:Event):void
+			{
+				GSGGUIPhotoshop.kShouldRespondToEvents = false;
+				GSGGUIPhotoshop.writeMetadata(evt);
+				var reqResult:SyncRequestResult = CSXSInterface.instance.evalScript("GSGGUI_export_dump");
+				if (reqResult.status != SyncRequestResult.COMPLETE)
+				{
+					GSGGUIPhotoshop.displayAlert("Unknown error running the export script.");
+				}
+				GSGGUIPhotoshop.kShouldRespondToEvents = true;
+				GSGGUIPhotoshop.photoshopCallback(PSTools.charToInteger("Opn "), 0);
+			}
+			
+		]]>
+	</fx:Script>
+	<csxs:states>
+		<s:State name="State1"/>
+	</csxs:states>
+	<mx:Accordion left="0" top="0" bottom="50" width="100%">
+		<s:NavigatorContent width="100%" height="100%" label="Object Info">
+			<s:Label x="12" y="14" text="Name:"/>
+			<s:TextInput id="nameField" y="10" left="60" right="10"
+						 focusOut="GSGGUIPhotoshop.changedLayerBasics(event)" keyUp="findEnterKey(event)"/>
+			<s:Label x="12" y="44" text="ID:"/>
+			<s:TextInput id="idField" y="40" left="60" right="10"
+						 change="GSGGUIPhotoshop.changedLayerBasics(event)"/>
+			<s:Label x="12" y="74" text="Class:"/>
+			<s:Label x="12" y="110" text="Misc:"/>
+			<s:TextInput id="classField" y="70" left="60" right="10"
+						 change="GSGGUIPhotoshop.changedLayerBasics(event)"/>
+			<s:TextArea id="miscField" left="10" right="10" top="130" bottom="20"
+						change="GSGGUIPhotoshop.changedLayerBasics(event)"/>
+		</s:NavigatorContent>
+		<s:NavigatorContent width="100%" height="100%" label="Layout Settings">
+			<s:DropDownList id="positionDropDownHorizontal" y="10" left="85" right="10"
+							dataProvider="{positionTypes}" selectedIndex="0"
+							change="GSGGUIPhotoshop.changedPositionType(event)">
+			</s:DropDownList>
+			<s:Label x="12" y="14" text="Position H:"/>
+			<s:Group id="panelRelativeHorizontal" visible="true" left="0" right="0" top="28"
+					 height="40">
+				<s:Label x="12" y="15" text="Percentage:"/>
+				<s:Label y="15" right="95" text="%"/>
+				<s:TextInput id="relativePositionHorizontal" y="10" left="85" right="110"
+							 focusOut="GSGGUIPhotoshop.manualRelativePosition(event)" keyUp="findEnterKey(event)"/>
+				<s:Button id="relativeHorizontalCalculateBtn" y="10" right="15" label="Calculate"
+						  click="GSGGUIPhotoshop.calculateRelativePosition(event)"/>
+			</s:Group>
+			<s:Group id="panelSnapToPointHorizontal" visible="true" left="0" right="0" top="28"
+					 height="40"
+					 creationComplete="GSGGUIPhotoshop.creationCompleteHandler(event)">
+				<s:DropDownList id="snapToDropDownHorizontal" y="10" left="85" right="10"
+								dataProvider="{snapToHorizontalTypes}" selectedIndex="0"
+								change="GSGGUIPhotoshop.changedPositionType(event)">
+				</s:DropDownList>
+				<s:Label x="12" y="14" text="Snap To:"/>
+			</s:Group>
+			<s:DropDownList id="positionDropDownVertical" y="76" left="85" right="10"
+							dataProvider="{positionTypes}" selectedIndex="0"
+							change="GSGGUIPhotoshop.changedPositionType(event)">
+			</s:DropDownList>
+			<s:Label x="12" y="80" text="Position V:"/>
+			<s:Group id="panelRelativeVertical" visible="true" left="0" right="0" top="94"
+					 height="40">
+				<s:Label x="12" y="15" text="Percentage:"/>
+				<s:Label y="15" right="95" text="%"/>
+				<s:TextInput id="relativePositionVertical" y="10" left="85" right="110"
+							 focusOut="GSGGUIPhotoshop.manualRelativePosition(event)" keyUp="findEnterKey(event)"/>
+				<s:Button id="relativeVerticalCalculateBtn" y="10" right="15" label="Calculate"
+						  click="GSGGUIPhotoshop.calculateRelativePosition(event)"/>
+			</s:Group>
+			<s:Group id="panelSnapToPointVertical" visible="true" left="0" right="0" top="94"
+					 height="40"
+					 creationComplete="GSGGUIPhotoshop.creationCompleteHandler(event)">
+				<s:DropDownList id="snapToDropDownVertical" y="10" left="85" right="10"
+								dataProvider="{snapToVerticalTypes}" selectedIndex="0"
+								change="GSGGUIPhotoshop.changedPositionType(event)">
+				</s:DropDownList>
+				<s:Label x="12" y="14" text="Snap To:"/>
+			</s:Group>
+		</s:NavigatorContent>
+		<s:NavigatorContent width="100%" height="100%" label="Export Settings">
+			<s:TextArea id="aboutText" left="10" right="10" bottom="10" height="50%" editable="false"
+						enabled="false" text="{aboutString}"/>
+			<s:CheckBox id="exportPNGCheckBox" left="15" top="10" label="Export PNG"
+						click="GSGGUIPhotoshop.changedExportSettings(event)"
+						creationComplete="GSGGUIPhotoshop.creationCompleteHandler(event)"/>
+			<s:Button x="15" y="36" label="Calculate Layer Sizes"
+					  click="GSGGUIPhotoshop.calculateLayerSizes(event)"/>
+		</s:NavigatorContent>
+	</mx:Accordion>
+	<s:Button left="0" right="0" bottom="25" height="25" label="WRITE METADATA (all layers)"
+			  click="GSGGUIPhotoshop.writeMetadata(event)"/>
+	<s:Button left="0" right="0" bottom="0" height="25" label="EXPORT" click="exportLayout(event)"/>
+</csxs:CSExtension>

@@ -1,0 +1,47 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?><ExtensionManifest xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" ExtensionBundleId="com.getsetgames.GSGGUI" ExtensionBundleName="GSGGUI" ExtensionBundleVersion="1.0.0" Version="3.0">
+	<ExtensionList>
+		<Extension Id="com.example.GSGGUI.extension1" Version="1.0"/>
+	</ExtensionList>
+	<ExecutionEnvironment>
+		<HostList>
+			<Host Name="PHXS" Version="[13.0,14.9]"/>
+			<Host Name="PHSP" Version="[13.0,14.9]"/>
+		</HostList>
+		<LocaleList>
+			<Locale Code="All"/>
+		</LocaleList>
+		<RequiredRuntimeList>
+			<RequiredRuntime Name="CSXS" Version="3.0"/>
+		</RequiredRuntimeList>
+	</ExecutionEnvironment>
+	<DispatchInfoList>
+		<Extension Id="com.example.GSGGUI.extension1">
+			<DispatchInfo>
+				<Resources>
+					<SwfPath>./GSGGUI.swf</SwfPath>
+				</Resources>
+				<Lifecycle>
+					<AutoVisible>true</AutoVisible>
+				</Lifecycle>
+				<UI>
+					<Type>Panel</Type>
+					<Menu>GSGGUI 2.0</Menu>
+					<Geometry>
+						<Size>
+							<Height>450</Height>
+							<Width>350</Width>
+						</Size>
+						<MaxSize>
+							<Height>450</Height>
+							<Width>350</Width>
+						</MaxSize>
+						<MinSize>
+							<Height>450</Height>
+							<Width>350</Width>
+						</MinSize>
+					</Geometry>
+				</UI>
+			</DispatchInfo>
+		</Extension>
+	</DispatchInfoList>
+</ExtensionManifest>
